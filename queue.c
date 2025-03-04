@@ -316,7 +316,41 @@ void q_reverseK(struct list_head *head, int k)
 }
 
 /* Sort elements of queue in ascending/descending order */
-void q_sort(struct list_head *head, bool descend) {}
+/* Use insertion sort now */
+void q_sort(struct list_head *head, bool descend)
+{
+    if (!head || head->next == head || head->next->next == head)
+        return;
+
+    struct list_head *current = head->next->next;
+    struct list_head *pos;
+
+    while (current != head) {
+        pos = current->prev;
+        while (
+            pos != head &&
+            (descend
+                 ? strcmp(list_entry(pos, element_t, list)->value,
+                          list_entry(current, element_t, list)->value) < 0
+                 : strcmp(list_entry(pos, element_t, list)->value,
+                          list_entry(current, element_t, list)->value) > 0)) {
+            pos = pos->prev;
+        }
+        // Remove current from the list
+        current->prev->next = current->next;
+        current->next->prev = current->prev;
+
+        // Insert current after pos
+        current->next = pos->next;
+        current->prev = pos;
+        pos->next->prev = current;
+        pos->next = current;
+
+        // Move to the next element
+        current = current->next;
+    }
+}
+
 
 /* Remove every node which has a node with a strictly less value anywhere to
  * the right side of it */
