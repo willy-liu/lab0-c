@@ -323,7 +323,30 @@ void q_sort(struct list_head *head, bool descend) {}
 int q_ascend(struct list_head *head)
 {
     // https://leetcode.com/problems/remove-nodes-from-linked-list/
-    return 0;
+    if (!head || head->next == head)
+        return 0;
+
+    // From last element to first element
+    struct list_head *cur = head->prev;
+    const element_t *cur_elem = list_entry(cur, element_t, list);
+    const char *min_val = cur_elem->value;  // keep the last element
+
+    cur = cur->prev;
+    while (cur != head) {
+        // Avoid the last element is removed
+        struct list_head *temp = cur->prev;
+        element_t *entry = list_entry(cur, element_t, list);
+        if (strcmp(entry->value, min_val) > 0) {
+            cur->prev->next = cur->next;
+            cur->next->prev = cur->prev;
+            free(entry->value);
+            free(entry);
+        } else {
+            min_val = entry->value;
+        }
+        cur = temp;
+    }
+    return q_size(head);
 }
 
 /* Remove every node which has a node with a strictly greater value anywhere to
@@ -331,8 +354,33 @@ int q_ascend(struct list_head *head)
 int q_descend(struct list_head *head)
 {
     // https://leetcode.com/problems/remove-nodes-from-linked-list/
-    return 0;
+    if (!head || head->next == head)
+        return 0;
+
+    // From last element to first element
+    struct list_head *cur = head->prev;
+    const element_t *cur_elem = list_entry(cur, element_t, list);
+    const char *max_val = cur_elem->value;  // keep the last element
+
+
+    cur = cur->prev;
+    while (cur != head) {
+        // Avoid the last element is removed
+        struct list_head *temp = cur->prev;
+        element_t *entry = list_entry(cur, element_t, list);
+        if (strcmp(entry->value, max_val) < 0) {
+            cur->prev->next = cur->next;
+            cur->next->prev = cur->prev;
+            free(entry->value);
+            free(entry);
+        } else {
+            max_val = entry->value;
+        }
+        cur = temp;
+    }
+    return q_size(head);
 }
+
 
 /* Merge all the queues into one sorted queue, which is in ascending/descending
  * order */
