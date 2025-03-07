@@ -25,15 +25,9 @@ void q_free(struct list_head *head)
 {
     if (!head)
         return;
-
-    struct list_head *current = head->next;
-    while (current != head) {
-        element_t *element = list_entry(current, element_t, list);
-        current = current->next;
-        if (element->value) {
-            free(element->value);
-        }
-        free(element);
+    struct list_head *entry, *safe;
+    list_for_each_safe (entry, safe, head) {
+        q_release_element(list_entry(entry, element_t, list));
     }
     free(head);
 }
