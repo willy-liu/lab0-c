@@ -106,11 +106,11 @@ int q_size(struct list_head *head)
         return 0;
 
     int count = 0;
-    struct list_head *current = head->next;
-    while (current != head) {
+    struct list_head *node;
+
+    list_for_each (node, head)
         count++;
-        current = current->next;
-    }
+
     return count;
 }
 
