@@ -133,44 +133,22 @@ bool q_delete_dup(struct list_head *head)
     if (!head || head->next == head)
         return false;
 
-    // q_sort(head, false);  // 先排序
+    struct list_head *node, *safe;
+    bool last_duplicate = false;
 
-    struct list_head *current = head->next;
-    bool has_duplicates = false;
+    list_for_each_safe (node, safe, head) {
+        element_t *element = list_entry(node, element_t, list);
+        const element_t *element_safe = list_entry(safe, element_t, list);
 
-    while (current != head && current->next != head) {
-        element_t *element = list_entry(current, element_t, list);
-        element_t *next_element = list_entry(current->next, element_t, list);
-
-        if (strcmp(element->value, next_element->value) == 0) {
-            has_duplicates = true;
-            struct list_head *dup = current->next;
-            current->next = dup->next;
-            dup->next->prev = current;
-            free(next_element->value);
-            free(next_element);
-        } else {
-            if (has_duplicates) {
-                struct list_head *dup = current;
-                current = current->prev;
-                current->next = dup->next;
-                dup->next->prev = current;
-                free(element->value);
-                free(element);
-                has_duplicates = false;
-            }
-            current = current->next;
+        if (safe != head && strcmp(element->value, element_safe->value) == 0) {
+            last_duplicate = true;
+            list_del(node);
+            q_release_element(element);
+        } else if (last_duplicate) {
+            last_duplicate = false;
+            list_del(node);
+            q_release_element(element);
         }
-    }
-
-    if (has_duplicates) {
-        struct list_head *dup = current;
-        current = current->prev;
-        current->next = dup->next;
-        dup->next->prev = current;
-        element_t *element = list_entry(dup, element_t, list);
-        free(element->value);
-        free(element);
     }
 
     return true;
