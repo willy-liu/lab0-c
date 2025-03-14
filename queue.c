@@ -20,7 +20,7 @@ void q_free(struct list_head *head)
     if (!head)
         return;
     struct list_head *entry, *safe;
-    list_for_each_safe (entry, safe, head) {
+    list_for_each_safe(entry, safe, head) {
         q_release_element(list_entry(entry, element_t, list));
     }
     free(head);
@@ -89,7 +89,7 @@ int q_size(struct list_head *head)
     int count = 0;
     struct list_head *node;
 
-    list_for_each (node, head)
+    list_for_each(node, head)
         count++;
 
     return count;
@@ -130,7 +130,7 @@ bool q_delete_dup(struct list_head *head)
     struct list_head *node, *safe;
     bool last_duplicate = false;
 
-    list_for_each_safe (node, safe, head) {
+    list_for_each_safe(node, safe, head) {
         element_t *element = list_entry(node, element_t, list);
         const element_t *element_safe = list_entry(safe, element_t, list);
 
