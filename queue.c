@@ -181,59 +181,23 @@ void q_reverse(struct list_head *head)
     } while (current != head);
 }
 
-static void q_reverse_between(struct list_head *start, struct list_head *end)
-{
-    struct list_head *prev = start->prev;
-    struct list_head *current = start;
-    struct list_head *next;
-
-    while (current != end) {
-        next = current->next;
-        current->next = current->prev;
-        current->prev = next;
-        current = next;
-    }
-
-    next = end->next;
-
-    end->next = end->prev;
-    end->prev = next;
-
-    prev->next = end;
-    start->next = next;
-    next->prev = start;
-    end->prev = prev;
-}
-
 /* Reverse the nodes of the list k at a time */
 void q_reverseK(struct list_head *head, int k)
 {
     // https://leetcode.com/problems/reverse-nodes-in-k-group/
-    if (!head || head->next == head || k <= 1)
+    if (!head || list_is_singular(head) || k <= 1)
         return;
 
-    // Keep track of the node before the current group
-    struct list_head *group_prev = head;
-    while (group_prev->next != head) {
-        struct list_head *start = group_prev->next;
-        struct list_head *current = start;
-        int count = 0;
+    struct list_head *node, *safe;
+    int count = 0;
 
-        // Count k nodes to check if a group of k exists
-        while (current != head && count < k) {
-            current = current->next;
-            count++;
+    list_for_each_safe(node, safe, head) {
+        count++;
+        if (count % k == 0) {
+            while (--count) {
+                list_move_tail(node->prev, safe);
+            }
         }
-
-        // Less than k elements remaining.
-        if (count < k) {
-            return;
-        }
-        // 'current' is now at the (k+1)-th node or head
-        struct list_head *end = current->prev;
-        q_reverse_between(start, end);  // Reverse the k-group
-
-        group_prev = start;
     }
 }
 
