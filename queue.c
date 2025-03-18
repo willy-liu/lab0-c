@@ -301,78 +301,55 @@ int q_descend(struct list_head *head)
     return q_size(head);
 }
 
-
-/* Merge all the queues into one sorted queue, which is in ascending/descending
- * order */
-static struct list_head *q_merge_two(struct list_head *head1,
-                                     struct list_head *head2)
-{
-    struct list_head *current = head1;
-    struct list_head *current1 = head1->next;
-    struct list_head *current2 = head2->next;
-
-    while (current1 != head1 && current2 != head2) {
-        const element_t *element1 = list_entry(current1, element_t, list);
-        const element_t *element2 = list_entry(current2, element_t, list);
-
-        if (strcmp(element1->value, element2->value) < 0) {
-            current->next = current1;
-            current1->prev = current;
-            current1 = current1->next;
-        } else {
-            current->next = current2;
-            current2->prev = current;
-            current2 = current2->next;
-        }
-        current = current->next;
-    }
-
-    while (current1 != head1) {
-        current->next = current1;
-        current1->prev = current;
-        current1 = current1->next;
-        current = current->next;
-    }
-
-    while (current2 != head2) {
-        current->next = current2;
-        current2->prev = current;
-        current2 = current2->next;
-        current = current->next;
-    }
-
-    current->next = head1;
-    head1->prev = current;
-
-    return head1;
-}
-
 int q_merge(struct list_head *head, bool descend)
 {
     // https://leetcode.com/problems/merge-k-sorted-lists/
-    if (!head || head->next == head)
+    if (!head || list_empty(head))
         return 0;
 
-    struct list_head *current_queue = head->next;
-    struct list_head *next_queue = current_queue->next;
+    if (list_is_singular(head))
+        return list_entry(head->next, queue_contex_t, chain)->size;
 
-    while (next_queue != head) {
-        queue_contex_t *current_context =
-            list_entry(current_queue, queue_contex_t, chain);
-        ;
-        queue_contex_t *next_context =
-            list_entry(next_queue, queue_contex_t, chain);
-        ;
+    struct list_head merged;
+    INIT_LIST_HEAD(&merged);
 
-        struct list_head *merged_queue =
-            q_merge_two(current_context->q, next_context->q);
+    while (1) {
+        queue_contex_t *entry, *best_queue = NULL;
+        struct list_head *best_node = NULL;
 
-        next_context->q->next = next_context->q;
-        next_context->q->prev = next_context->q;
-        current_context->q = merged_queue;
+        list_for_each_entry(entry, head, chain) {
+            if (list_empty(entry->q))
+                continue;
 
-        next_queue = next_queue->next;
+            if (!best_node) {
+                best_node = entry->q->next;
+                best_queue = entry;
+            } else if ((strcmp(
+                            list_entry(entry->q->next, element_t, list)->value,
+                            list_entry(best_node, element_t, list)->value) <
+                        0) ^
+                       descend) {
+                best_node = entry->q->next;
+                best_queue = entry;
+            }
+        }
+
+        if (!best_node)
+            break;
+
+        if (list_is_singular(head)) {
+            list_splice_tail_init(best_queue->q, &merged);
+            best_queue->size = 0;
+            break;
+        }
+
+        list_move_tail(best_node, &merged);
+        best_queue->size--;
     }
 
-    return q_size(list_entry(current_queue, queue_contex_t, chain)->q);
+    queue_contex_t *first_entry = list_entry(head->next, queue_contex_t, chain);
+    list_splice_init(&merged, first_entry->q);
+    first_entry->size = q_size(first_entry->q);
+
+    return first_entry->size;
 }
