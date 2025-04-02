@@ -201,40 +201,73 @@ void q_reverseK(struct list_head *head, int k)
     }
 }
 
+struct list_head *merge(struct list_head *left,
+                        struct list_head *right,
+                        bool descend)
+{
+    struct list_head merged;
+    INIT_LIST_HEAD(&merged);
+    struct list_head *cur = &merged;
+
+    while (left && right) {
+        const element_t *left_elem = list_entry(left, element_t, list);
+        const element_t *right_elem = list_entry(right, element_t, list);
+
+        int cmp = strcmp(left_elem->value, right_elem->value);
+        if (descend)
+            cmp = -cmp;
+
+        if (cmp <= 0) {
+            cur->next = left;
+            left = left->next;
+        } else {
+            cur->next = right;
+            right = right->next;
+        }
+        cur = cur->next;
+    }
+    if (left)
+        cur->next = left;
+    if (right)
+        cur->next = right;
+
+    return merged.next;
+}
+
+struct list_head *merge_sort(struct list_head *head, bool descend)
+{
+    if (!head || !head->next)
+        return head;
+
+    struct list_head *slow = head, *mid;
+    for (const struct list_head *fast = head->next; fast && fast->next;
+         fast = fast->next->next) {
+        slow = slow->next;
+    }
+    mid = slow->next;
+    slow->next = NULL;
+
+    struct list_head *left = merge_sort(head, descend);
+    struct list_head *right = merge_sort(mid, descend);
+
+    return merge(left, right, descend);
+}
+
 /* Sort elements of queue in ascending/descending order */
-/* Use insertion sort now */
 void q_sort(struct list_head *head, bool descend)
 {
-    if (!head || head->next == head || head->next->next == head)
+    if (!head || list_is_singular(head))
         return;
-
-    struct list_head *current = head->next->next;
-    struct list_head *pos;
-
-    while (current != head) {
-        pos = current->prev;
-        while (
-            pos != head &&
-            (descend
-                 ? strcmp(list_entry(pos, element_t, list)->value,
-                          list_entry(current, element_t, list)->value) < 0
-                 : strcmp(list_entry(pos, element_t, list)->value,
-                          list_entry(current, element_t, list)->value) > 0)) {
-            pos = pos->prev;
-        }
-        // Remove current from the list
-        current->prev->next = current->next;
-        current->next->prev = current->prev;
-
-        // Insert current after pos
-        current->next = pos->next;
-        current->prev = pos;
-        pos->next->prev = current;
-        pos->next = current;
-
-        // Move to the next element
-        current = current->next;
+    head->prev->next = NULL;  // break the circular list
+    head->next = merge_sort(head->next, descend);
+    struct list_head *cur = head;
+    while (cur->next) {  // reconnect prev pointer
+        cur->next->prev = cur;
+        cur = cur->next;
     }
+    cur->next = head;
+    head->prev = cur;
+    return;
 }
 
 
